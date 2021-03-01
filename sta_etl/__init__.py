@@ -3,3 +3,6 @@
 __author__ = """Boris Bauermeister"""
 __email__ = 'Boris.Bauermeister@gmail'
 __version__ = '0.1.0'
+
+
+#from sta_etl import *
