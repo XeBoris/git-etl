@@ -4,6 +4,8 @@
 
 from sta_etl.plugin_handler.etl_collector import Collector, NameCollector, ClassCollector
 from sta_etl.plugins.plugin_dummy import Plugin_Dummy
+from sta_etl.plugins.plugin_aggregates import Plugin_SimpleProjection
+from sta_etl.plugins.plugin_simple_distances import Plugin_SimpleDistance
 
 # from sta_etl.plugin_handler.plugin_simple_distances import Plugin_SimpleDistance
 # from sta_etl.plugin_handler.plugin_aggregates import Plugin_SimpleProjection
