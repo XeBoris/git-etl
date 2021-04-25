@@ -18,29 +18,56 @@ class Plugin_SimpleDistance():
         without initiating further variables and member functions
         """
         self._plugin_config = {
-            "module_name": "Simple_Distance_Calculator",
-            "module_dependencies": ["gps"],
+            "plugin_name": "Simple_Distance_Calculator",
+            "plugin_dependencies": ["gps"],
+            "plugin_description": """
+            This is a simple distance plugin to calculate individual time and position
+            differences.
+            """,
             "leaf_name": "simple_distances"
         }
 
     def init(self):
         """
-        The "true" init is used here to setup the plugin
+        The "true" init is used here to setup the plugin. At this point, a dictionary
+        (self._data_dict) is created which holds data which are required that this plugin runs through.
+        (see set_plugin_data(...) for more information). If self._data_dict is not set
+        externally, it could also mean that there are no requirements for data sources.
+        Have a look at the processing instruction of this plugin to verify its function.
+
+        .. note::
+            - self._data_dict is always a dictionary which can be empty if not data are
+              required by this plugin
+            - self._proc_success is always False initially. Set to True if processing is
+              successful to notify the PluginLoader about the outcome.
+            - self._proc_result is initially None and becomes a pandas DataFrame or any
+              other data storage object. It is mandatory that the PluginLoader understands
+              how to handle the result and write it to the underlying storage facility.
         :return: None
         """
-        self.data_dict = None
-        self.df_result = None
-        self.proc_success = False
+        self._data_dict = {}
+        self._proc_success = False
+        self._proc_result = None
 
     def get_result(self):
         """
-        Standard function: Return
+        A return function for this plugin to transfer processed data the the PluginLoader.
+
+        This plugin returns None or pd.DataFrame as result. The plugin handler needs to
+        understand return object for creating the correct database entry and handle storage
+        of the plugin result on disk. See i_process(...) in loader.py for handling the result.
+
         :return: Pandas DataFrame or None
         """
-        return self.df_result
+        return self._proc_result
 
     def get_processing_success(self):
-        return self.proc_success
+        """
+        Reports the processing status back to the PluginLoader. This variable is set to False
+        by default and needs to be set to True if processing of the plugin is successful.
+        :return: bool
+        """
+        return self._proc_success
 
     def get_plugin_config(self):
         """
@@ -49,27 +76,54 @@ class Plugin_SimpleDistance():
         """
         return self._plugin_config
 
-    def set_plugin_data(self, data_dict):
+    def print_plugin_config(self):
         """
-        Standard function: Set the leaf/plugin configuration
+        This one is just presenting the initial plugin configuration inside or outside this
+        plugin to users.
+        .. todo: This function uses Python print(...) right now. Change to logging soon.
 
-        :param data_dict: A dictionary
-        :return: -
+        :return: None
         """
-        self.data_dict = data_dict
+        print("<-----------")
+        print(f"Plugin name {self._plugin_config.get('name')}")
+        print(f"Plugin dependencies: {self._plugin_config.get('plugin_dependencies')}")
+        print(f"Plugin produces leaf name (aka data asset): {self._plugin_config.get('leaf_name')}")
+        print(f"Plugin description:")
+        print(self._plugin_config.get('plugin_description'))
+        print("<-----------")
+
+    def set_plugin_data(self, data_dict={}):
+        """
+        A function to set the necessary data as a dictionary. The dictionary self._data_dict
+        is set before when running init(...) but have to set dictionary data beforehand when
+        your code below requires it for running.
+
+        :param data_dict: dictionary
+            A dictionary with data objects which can be understood by the processor code
+            below.
+        :return: None
+        """
+
+        self._data_dict = data_dict
 
     def run(self):
         """
-        Standard function: Triggering the processing feature
-        of this plugin from the outside.
+        A data processor can be sometimes more complicated. So you are supposed to use
+        run(...) as call for starting the processing instruction. You might like to put
+        control mechanism to it check the correct behavior of the plugin processor code.
 
-        :return: -
+        .. note::
+            All processing instruction, helper functions,... are in the scope of "private"
+            of this plugin processor class. Therefore, stick to the _<name> convention when
+            defining names in your plugins.
+
+        :return: None
         """
         #Run individual steps of the data processing:
-        self.processer()
+        self._processer()
 
 
-    def processer(self):
+    def _processer(self):
         """
         The main function which is used in this plugin to process data
         :return:
@@ -86,6 +140,7 @@ class Plugin_SimpleDistance():
         gps0 = None
         time0 = None
 
+        # Iterate over rows, extract, transform, append
         for row in gps_data.T.iteritems():
             # Extract the first row
             i_gps = (row[1]["latitude"], row[1]["longitude"], row[1]["altitude"])
@@ -114,6 +169,7 @@ class Plugin_SimpleDistance():
             gps0 = i_gps
             time0 = i_time
 
+        # post processing:
         dt_cumsum_list = np.cumsum(dt_list)
         dx_cumsum_list = np.cumsum(dx_list)
         dxz_cumsum_list = np.cumsum(dxz_list)
@@ -134,8 +190,8 @@ class Plugin_SimpleDistance():
             'velocity_euclidic': dv_euclidian
         }
 
-        self.df_result = pd.DataFrame(data=results)
+        self._proc_result = pd.DataFrame(data=results)
 
 
         #if you make it to here:
-        self.proc_success = True
+        self._proc_success = True

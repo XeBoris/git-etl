@@ -2,28 +2,42 @@ from sta_etl.plugin_handler.etl_collector import Collector
 
 import pandas as pd
 import numpy as np
-from geopy.distance import distance as geopy_distance
-import math
+# from geopy.distance import distance as geopy_distance
+# import math
 
 @Collector
-class Plugin_SimpleProjection():
+class Plugin_Dev1():
     """
-    This plugin extract and aggregate information for further analysis.
+    This is template development plugin for proving the processing chain right with
+    depending plugins. This plugin is part of Plugin_Dev2(...) and can be used together
+    such as:
+
+    :Example:
+        sta_cli process --hash 697b5d35 --type "Plugin_Dev2"
+
+    This will trigger a processing chain based on the module dependency of Plugin_Dev2
+    to Plugin_Dev1, create random data and stores the outcome in the STA database core.
+
+    As a developer you can set
+    - self._proc_success (True or False)
+    - self._proc_success (None or pd.DataFrame)
+    to simulate processing a processing chain along the way.
+
     """
     def __init__(self):
         """
         The class init function. This function holds only information
         about the plugin itself. In that way we can always load the plugin
-        without initiating further variables and member functions
+        without initiating further variables and member functions.
         """
         self._plugin_config = {
-            "plugin_name": "Simple_Projection",
-            "plugin_dependencies": ["simple_distances", "gps"],
+            "plugin_name": "Plugin_Developement1",
+            "plugin_dependencies": ["gps"],
             "plugin_description": """
-            This plugin calculates simple projections on distances, velocities and other
-            quantities.
+            This is development plugin (1) to prove functioning of the processing
+            architecture of STA.
             """,
-            "leaf_name": "simple_projection"
+            "leaf_name": "devel1"
         }
 
     def __del__(self):
@@ -132,51 +146,25 @@ class Plugin_SimpleProjection():
 
     def _processer(self):
         """
-        The main function which is used in this plugin to process data
+        In this template plugin, we hold the processing instruction in this function.
+
+        The aim of this plugin to simulate the handling of processing dependencies.
         :return:
         """
-        #Fetch all important data for calculations:
-        sdistances = self.data_dict.get("simple_distances")
-        sgps = self.data_dict.get("gps")
+        # Fetch all important data for calculations (Example):
+        # Use always .get(...) for self._data_dict to be in control of the existence
+        # of the data object.
+        gps_data = self._data_dict.get("gps")
 
-        final = {"tot_dist_geodasic": [sdistances["dist_geodasic"].sum()],
-                 "tot_dist_euclidiac": [sdistances["dist_euclidiac"].sum()],
-                 "tot_duration": [sdistances["duration"].sum()],
-                 "median_velocity_geodasic": [sdistances["velocity_geodasic"].median()],
-                 "mean_velocity_geodasic": [sdistances["velocity_geodasic"].mean()],
-                 "median_velocity_euclidic": [sdistances["velocity_euclidic"].median()],
-                 "mean_velocity_euclidic": [sdistances["velocity_euclidic"].mean()]
-                 }
+        # Implement you code here! We will just show the plugin configuration:
+        self.print_plugin_config()
 
-        sgps["altitudeDiff"] = sgps["altitude"].shift(1) - sgps["altitude"]
+        # Create a fake result:
+        # As a developer you will use this section to simulate if a plugin processing
+        # chain is successful and what is reported back to the PluginLoader.
+        df = pd.DataFrame(np.random.randint(0, 100, size=(100, 4)),
+                          columns=["devel1-A", "devel1-B", "devel1-C", "devel1-D"])
 
-        #print(sgps["altitudeDiff"].to_list())
-        # self.df_result = pd.DataFrame(data=results)
-        pos = sgps[(sgps["altitudeDiff"] > 0)]
-        neg = sgps[(sgps["altitudeDiff"] < 0)]
-        pos_sum = pos["altitudeDiff"].sum()
-        neg_sum = neg["altitudeDiff"].sum()
-        final["altitude_up"] = [pos_sum]
-        final["altitude_dw"] = [neg_sum]
-
-        final["max_velocity_geodasic"] = [sdistances["velocity_geodasic"].describe()["max"]]
-        final["m75p_velocity_geodasic"] = [sdistances["velocity_geodasic"].describe()["75%"]]
-        final["m50p_velocity_geodasic"] = [sdistances["velocity_geodasic"].describe()["50%"]]
-        final["m25p_velocity_geodasic"] = [sdistances["velocity_geodasic"].describe()["25%"]]
-        final["min_velocity_geodasic"] = [sdistances["velocity_geodasic"].describe()["min"]]
-        final["std_velocity_geodasic"] = [sdistances["velocity_geodasic"].describe()["std"]]
-        #final["mean_velocity_geodasic"] = [sdistances["velocity_geodasic"].describe()["mean"]]
-
-        final["max_velocity_euclidic"] = [sdistances["velocity_euclidic"].describe()["max"]]
-        final["m75p_velocity_euclidic"] = [sdistances["velocity_euclidic"].describe()["75%"]]
-        final["m50p_velocity_euclidic"] = [sdistances["velocity_euclidic"].describe()["50%"]]
-        final["m25p_velocity_euclidic"] = [sdistances["velocity_euclidic"].describe()["25%"]]
-        final["min_velocity_euclidic"] = [sdistances["velocity_euclidic"].describe()["min"]]
-        final["std_velocity_euclidic"] = [sdistances["velocity_euclidic"].describe()["std"]]
-        #final["mean_velocity_geodasic"] = [sdistances["velocity_geodasic"].describe()["mean"]]
-
-        self._proc_result = pd.DataFrame(data=final)
-
-        #print(self.df_result)
-        # if you make it to here:
+        #Fake results:
+        self._proc_result = df
         self._proc_success = True
